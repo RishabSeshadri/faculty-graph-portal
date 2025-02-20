@@ -1,0 +1,4 @@
+.env
+faculty_graph_notes.txt
+*.csv
+*.xlsx
