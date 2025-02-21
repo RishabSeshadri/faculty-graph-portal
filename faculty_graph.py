@@ -4,8 +4,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import os
 import json
-import math
 import random
+
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -208,7 +208,8 @@ def create_columns(df) -> pd.DataFrame:
 def plot_graph(df, 
                search_professor=False, 
                category_search_parameter="degree_program", 
-               professor_search_parameter=None
+               professor_search_parameter=None,
+               min_weight=0
     ):
     if not search_professor:
         graphs = {}
@@ -277,11 +278,9 @@ def plot_graph(df,
         plt.figure(figsize=(cols * 5, rows * 4))
 
         for i, (value, G) in enumerate(graphs.items(), 1):
-            plt.subplot(rows, cols, i)
+            plt.subplot(rows, cols, i)            
             
-            k = 0.2  # Edge length
-            
-            pos = nx.spring_layout(G, k=k, seed=42)
+            pos = nx.spring_layout(G, k=0.2, seed=42)
             
             nx.draw(
                 G, pos, with_labels=True, node_color='lightblue', node_size=1500,
@@ -315,6 +314,8 @@ def plot_graph(df,
                 
                 # Add all related professors from this layer
                 for related_professor, weight in related_professors:
+                    if min_weight > weight:
+                        continue
                     if related_professor not in added_nodes:
                         G.add_node(related_professor)
                         G.add_edge(current_professor, related_professor, weight=weight)
@@ -325,7 +326,7 @@ def plot_graph(df,
                         if related_professor in df.index:
                             next_layer_professors = df.loc[related_professor, 'related_professors']
 
-                            if type(next_layer_professors) == 'number':
+                            if isinstance(next_layer_professors, float):
                                 continue
 
                             # Only add to the queue if this professor hasn't been visited already
@@ -334,7 +335,7 @@ def plot_graph(df,
                                     layer_queue.append((related_professor, next_layer_professors))
 
             plt.figure(figsize=(10, 8))
-            pos = nx.spring_layout(G, k=k, seed=42)
+            pos = nx.spring_layout(G, k=0.2, seed=42)
 
             node_colors = ["pink" if node == professor_search_parameter else "lightgreen" for node in G.nodes]
 
@@ -361,8 +362,7 @@ if __name__ == "__main__":
     df = create_columns(df)
     plot_graph(
         df, 
-        search_professor=False,
-        category_search_parameter="degree_program",
-        professor_search_parameter=None
+        search_professor=True,
+        professor_search_parameter="Beiwen Li"
     )
 
