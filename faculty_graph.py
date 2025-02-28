@@ -11,7 +11,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 def initialize_df() -> pd.DataFrame:
-    df = pd.read_csv('faculty_data.csv', encoding='ISO-8859-1')
+    df = pd.read_csv('faculty_data_final.csv', encoding='ISO-8859-1')
 
     df = df.rename(columns={'Name': 'name',
                     'School': "school",
@@ -21,6 +21,7 @@ def initialize_df() -> pd.DataFrame:
                         'PhD. Degree': "phd_degree",
                         'Interdisciplinary Areas': "interdisciplinary_areas",
                         'Broad Speacialty Areas / Expertise': "broad_specialties",
+                        'Overlapping Expertise': "overlapping_expertise",
                         'Research Keywords': "research_keywords",
                         'Major Tool / Equipment': "equipment",
                         'Potential Sponsors': "potential_sponsors",
@@ -46,13 +47,13 @@ def initialize_df() -> pd.DataFrame:
     return df
 
 def create_columns(df) -> pd.DataFrame:
-    gen_df = df[["name", "interdisciplinary_areas", "broad_specialties"]]
+    gen_df = df[["name", "interdisciplinary_areas", "broad_specialties", "outside_collaborators"]]
     json_data = gen_df.to_json(orient="records", indent=4)
 
     API_KEY = os.getenv("API_KEY")
 
     client = OpenAI(
-    api_key=API_KEY
+        api_key=API_KEY
     )
 
     prompt = f"""
@@ -67,7 +68,7 @@ def create_columns(df) -> pd.DataFrame:
     - Example possible categories:  
         - "AI, Data Science, and Cyber-Physical Systems"  
         - "Biomedical and Health Engineering"  
-        - "Energy, Environment, and Sustainability"  
+        - "Energy, Environment, and Sustainability"
         - "Materials, Manufacturing, and Robotics"  
         - "Education, Policy, and Social Impact in Engineering"  
     - You may **adjust the categories slightly**, but they must remain **broad and standardized** while keeping research connections meaningful.  
@@ -125,25 +126,27 @@ def create_columns(df) -> pd.DataFrame:
     df_json = df.to_json(orient="records", indent=4)
 
     second_prompt = f"""
-    You are tasked with categorizing engineering professors at the University of Georgia based on their relatedness to other professors. You will use
-    the following columns in the data to establish connections:
+    You are tasked with categorizing engineering professors at the University of Georgia based on their relatedness to other professors. You will use the following columns in the data to establish connections:
     - **'uga_collaborators'**
     - **'outside_collaborators'**
     - **'interdisciplinary_areas'**
     - **'broad_specialties'**
     - **'generated_disciplines'**
+    - **'overlapping_expertise'**
+    - **'current_affiliation'**
+    - **'school'**
 
-    Your goal is to **group professors into related clusters** based on shared collaborators, research areas, and disciplines. **You should calculate
-    connection strength based on shared collaborators or research areas** and assign each connection a weight according to the following principles:
-    1. **Collaborators**: Professors sharing collaborators within UGA, then outside UGA should have a higher weights in that order.
-    - For example, two professors with 3 shared UGA collaborators will have a stronger connection than two with 3 shared outside collaborators, and both
-    will have a stronger connection than two with only 1 shared collaborator.
-    2. **Interdisciplinary Areas**: Professors with overlapping interdisciplinary areas should have a moderate weight.
-    - For example, two professors in the "AI, Data Science, and Cyber-Physical Systems" category could be connected with a lower weight if
-        they share a similar area.
-    3. **Disciplines**: Professors who share the same generated discipline from the previous categorization step should be considered highly related.
-    4. **Weights**: Ensure that the connection weights are rounded to one decimal place (e.g., 3.0, 1.5, etc.).
-    5. **Justification**: Provide a reasoning breakdown for each weight, specifying which columns contributed to the connection strength.
+    Your goal is to **group professors into related clusters** based on shared collaborators, research areas, disciplines, and institutional affiliations. **You should calculate connection strength based on shared collaborators, expertise, and affiliations** and assign each connection a weight according to the following principles:
+
+    1. **Overlapping Expertise (Weight: 3)**: Professors with similar research areas and expertise (from the 'overlapping_expertise' column) receive the highest weight.
+    2. **Collaborators (Weight: 2)**: Professors sharing collaborators are valued next. Shared UGA collaborators contribute more strongly than shared outside collaborators.  
+    - For example, two professors with 3 shared UGA collaborators will have a stronger connection than two with 3 shared outside collaborators, and both will be stronger than those with only 1 shared collaborator.
+    3. **Interdisciplinary Areas and Broad Specialties**: Overlapping interdisciplinary areas and broad specialties add moderate weight.
+    4. **Generated Disciplines**: Professors who share the same generated discipline are considered highly related.
+    5. **Current Affiliation / Degree Program (Weight: 0.5)**: Professors with the same current affiliation or degree program receive a modest weight.
+    6. **School (Weight: <0.5)**: School affiliation is considered minimally, contributing less than 0.5 to the connection weight.
+    7. **Weights**: Ensure that the connection weights are rounded to one decimal place (e.g., 3.0, 1.5, etc.).
+    8. **Justification**: Provide a reasoning breakdown for each weight, specifying which columns contributed to the connection strength.
 
     ### Input Data:
     {df_json}
@@ -153,21 +156,24 @@ def create_columns(df) -> pd.DataFrame:
         "insight": "<mention if any professors were difficult to categorize>",
         "generated_groups": [
             {{
-            "name": "<professor_name>",
-            "related_professors": [
-                {{
-                "name": "<related_professor_1>", 
-                "weight": "<connection_weight>",
-                "reasoning": {{
-                    "uga_collaborators": "<number_of_shared_collaborators>",
-                    "outside_collaborators": "<number_of_shared_outside_collaborators>",
-                    "interdisciplinary_areas": "<number_of_shared_areas>",
-                    "broad_specialties": "<number_of_shared_specialties>",
-                    "generated_disciplines": "<True/False if same discipline>"
-                }}
-                }},
-                ...
-            ]
+                "name": "<professor_name>",
+                "related_professors": [
+                    {{
+                        "name": "<related_professor_1>", 
+                        "weight": "<connection_weight>",
+                        "reasoning": {{
+                            "uga_collaborators": "<number_of_shared_collaborators>",
+                            "outside_collaborators": "<number_of_shared_outside_collaborators>",
+                            "interdisciplinary_areas": "<number_of_shared_areas>",
+                            "broad_specialties": "<number_of_shared_specialties>",
+                            "generated_disciplines": "<True/False if same discipline>",
+                            "overlapping_expertise": "<number_of_overlapping_expertise>",
+                            "current_affiliation": "<True/False or degree of match>",
+                            "school": "<True/False or degree of match>"
+                        }}
+                    }},
+                    ...
+                ]
             }},
             ...
         ]
@@ -363,6 +369,5 @@ if __name__ == "__main__":
     plot_graph(
         df, 
         search_professor=True,
-        professor_search_parameter="Beiwen Li"
+        professor_search_parameter="Christina Fuller"
     )
-
