@@ -1,6 +1,4 @@
 .env
-faculty_graph_notes.txt
-*.csv
-*.xlsx
 logs/*
-*.html
+output/*
+data/*
