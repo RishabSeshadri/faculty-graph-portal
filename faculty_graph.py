@@ -1,16 +1,17 @@
 import pandas as pd
-import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
 import os
 import json
-import random
 from pyvis.network import Network
 from openai import OpenAI
 from dotenv import load_dotenv
 
+
+
 def initialize_df() -> pd.DataFrame:
-    df = pd.read_csv('./data/faculty_data_final.csv', encoding='ISO-8859-1')
+
+    csv_file = os.getenv("CSV_FILE")
+    df = pd.read_csv(csv_file, encoding='ISO-8859-1')
 
     df = df.rename(
             columns={
@@ -49,8 +50,12 @@ def initialize_df() -> pd.DataFrame:
     return df
 
 def create_columns(df) -> pd.DataFrame:
-    gen_df = df[["name", "interdisciplinary_areas", "broad_specialties", "outside_collaborators"]]
-    json_data = gen_df.to_json(orient="records", indent=4)
+    """
+    This function creates the columns 'generated_disciplines' and 'related_professors'
+    in the dataframe. Both columns are created by calling the OpenAI API
+    with a prompt that categorizes professors based on their research areas and specialties.
+    """
+    json_data = df[["name", "interdisciplinary_areas", "broad_specialties", "outside_collaborators"]].to_json(orient="records", indent=4)
 
     API_KEY = os.getenv("API_KEY")
 
@@ -250,11 +255,13 @@ def plot_graph(df,
                professor_search_parameter=None,
                min_weight=0
     ):
+    """
+    This function plots a graph of professors based on their relatedness and disciplines.
+    It creates a network graph for each category in the specified parameter.
+    """
     if not search_professor:
         graphs = {}
         miscellaneous = []  # will hold nodes from groups with only one element
-
-        print(df)
 
         # Loop over each unique group value
         for value in df[category_search_parameter].unique():
@@ -290,10 +297,8 @@ def plot_graph(df,
         cols = 2
         rows = (num_graphs + cols - 1) // cols
 
-        plt.figure(figsize=(cols * 5, rows * 4))
 
         for i, (value, G) in enumerate(graphs.items(), 1):
-            plt.subplot(rows, cols, i)            
             pos = nx.spring_layout(G, k=0.2, seed=42)
             
             nx.draw(
@@ -301,7 +306,6 @@ def plot_graph(df,
                 font_size=10, font_weight='normal', edge_color='gray', width=2,
                 alpha=0.7, edgecolors="black"
             )
-            plt.title(value, fontsize=12)
 
         # Optionally, output the miscellaneous nodes (not plotted)
         print("Miscellaneous nodes (grouped but not plotted):", miscellaneous)
@@ -414,7 +418,6 @@ def plot_graph(df,
                                 if next_related_professor not in visited:
                                     layer_queue.append((related_professor, next_layer_professors))
 
-            plt.figure(figsize=(10, 8))
             pos = nx.spring_layout(G, k=0.2, seed=42)
 
             node_colors = ["pink" if node == professor_search_parameter else "lightgreen" for node in G.nodes]
@@ -428,11 +431,6 @@ def plot_graph(df,
             edge_labels = nx.get_edge_attributes(G, 'weight')
             nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10)
 
-            plt.title(f"Professor: {professor_search_parameter} and Related Professors", fontsize=14)
-            
-            plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
-            plt.show()
-
         else:
             print(f"Professor '{professor_search_parameter}' not found in the dataset.")
 
@@ -443,6 +441,6 @@ if __name__ == "__main__":
     plot_graph(
         df, 
         search_professor=False,
-        category_search_parameter="generated_disciplines",
+        category_search_parameter="overlapping_expertise",
         #professor_search_parameter="Christina Fuller"
     )
