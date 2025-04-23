@@ -7,7 +7,6 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 
-
 def initialize_df() -> pd.DataFrame:
 
     csv_file = os.getenv("CSV_FILE")
