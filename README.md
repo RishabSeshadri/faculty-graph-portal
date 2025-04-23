@@ -10,7 +10,7 @@ Ensure all the libraries are correctly installed (i.e. openai, pyvis, etc.), and
 ```$ pip3 install requirements.txt```
 
 
-You will need an **OpenAI API key** to run the code. You can get one by signing up for an account at [OpenAI](https://platform.openai.com/signup). For reference, I purchased \$5 word of credit to use for this project in January, and with extensive testing, have used about \$0.42 over the course of 4 months. 
+You will need an **OpenAI API key** to run the code. You can get one by signing up for an account at [OpenAI](https://platform.openai.com/signup). For reference, I purchased \$5 worth of credit to use for this project in January, and with extensive testing, have used about \$0.42 over the course of 4 months. 
 
 Once you have your API key, create a file called `.env` in the root directory of the project and add the following line to it:
     
