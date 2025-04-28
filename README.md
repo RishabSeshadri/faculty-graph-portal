@@ -7,7 +7,7 @@ The main purpose of this research project is to create a portal for University o
 Below are some example graphs generated in the current version (4/3/2025):
 
 <img width="400" alt="school_4_3_2025" src="https://github.com/user-attachments/assets/9771a0fd-2385-42b5-b20c-495df7ea9159" />
-<img width="435" alt="overlapping_expertise_4_3_2025" src="https://github.com/user-attachments/assets/a926fcb8-de10-4920-ae1c-d7fc89ab0bc7" />
+<img width="400" alt="overlapping_expertise_4_3_2025" src="https://github.com/user-attachments/assets/a926fcb8-de10-4920-ae1c-d7fc89ab0bc7" />
 
 
 ----------------------------------------------
