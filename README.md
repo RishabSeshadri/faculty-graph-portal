@@ -68,7 +68,7 @@ The reasoning for choosing specified weights is noted in the `logs` folder and m
 
 ## Contact
 
-If you have any questions or suggestions, feel free to reach out to me at [rishab.seshadri@gmail.com](rishab.seshadri@gmail.com).
+If you have any questions or suggestions, feel free to reach out to me at [rs43584@uga.edu](rs43584@uga.edu) or [rishab.seshadri@gmail.com](rishab.seshadri@gmail.com).
 
 ----------------------------------------------
 *Authors: Rishab Seshadri*
